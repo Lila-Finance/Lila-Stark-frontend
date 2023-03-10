@@ -50,7 +50,7 @@ const App = () => {
       console.log('chain:', chain)
 			return (
 				<div className="connect-wallet-container">
-        <p>Please Switch to StarkNet Goerli Testnet</p>
+        <p>Please Switch to Starknet Goerli Testnet</p>
       </div>
 			);
 		}
@@ -104,7 +104,7 @@ const App = () => {
           <header>
             <div className="left">
               <p className="title">✨ Dapp Sample</p><br></br>
-              <p className="subtitle">This is a sample DAPP which alows you to mint an NFT on StarkNet!</p>
+              <p className="subtitle">This is a sample DAPP which alows you to mint an NFT on Starknet!</p>
             </div>
             {/* Display a logo and wallet connection status*/}
             <div className="right">
