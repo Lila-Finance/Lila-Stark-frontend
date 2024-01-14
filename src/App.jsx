@@ -4,7 +4,7 @@ import { stark, uint256, AccountInterface, constants } from "starknet"
 import './styles/App.css';
 import ethLogo from './assets/ethlogo.png';
 import twitterLogo from './assets/twitter-logo.svg';
-import { useConnectors, useAccount, useNetwork, useTransactionReceipt } from '@starknet-react/core';
+import { useConnect, useDisconnect, useAccount, useNetwork, useWaitForTransaction } from '@starknet-react/core';
 
 // Constants
 const TWITTER_HANDLE = 'WTFAcademy_';
@@ -19,25 +19,24 @@ const App = () => {
   const [value, setValue] = useState();
   const [minted, setMinted] = useState(false)
 
-  const { connect, connectors, disconnect, available, refresh } = useConnectors()
+  const { connect, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
   const { account, address, status } = useAccount()
   const { chain } = useNetwork()
   const [hash, setHash] = useState(undefined)
-  const { data, loading, error } = useTransactionReceipt({ hash, watch: true })
+  const { data, isLoading, error } = useWaitForTransaction({ hash, watch: true })
 
   useEffect(() => {
-    const interval = setInterval(refresh, 5000)
-    return () => clearInterval(interval)
-  }, [refresh])
+  }, [minted])
 
 	// Create a function to render if wallet is not connected yet
 	const renderNotConnectedContainer = () => (
 		<div className="connect-wallet-container">
       <br></br>
-      {available.map((connector) => (
-        <div key={connector.id()}>
-        <button className="cta-button connect-wallet-button" key={connector.id()} onClick={() => connect(connector)}>
-          Connect {connector.id()}
+      {connectors.map((connector) => (
+        <div key={connector.id}>
+        <button className="cta-button connect-wallet-button" onClick={() => connect({ connector })}>
+          Connect {connector.name}
         </button>
         </div>
       ))}
@@ -46,7 +45,7 @@ const App = () => {
 
 	// Form to enter domain name and data
 	const renderInputForm = () => {
-		if (chain.name !== 'StarkNet Görli') {
+		if (chain.name !== 'Starknet Goerli Testnet') {
       console.log('chain:', chain)
 			return (
 				<div className="connect-wallet-container">
@@ -65,7 +64,7 @@ const App = () => {
 
   const mintedTip = () => {
     return (
-      <p>Minted Successfuly!</p>
+      <p>Minted Successfully!</p>
     )
   }
   
@@ -86,7 +85,7 @@ const App = () => {
       );
       const status = await account.waitForTransaction(callTx.transaction_hash);
       console.log(status)
-      if (status.status === 'PENDING') {
+      if (status.execution_status === 'SUCCEEDED') {
         setMinted(() => {return true});
       }
       else {}

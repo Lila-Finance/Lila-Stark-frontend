@@ -1,12 +1,12 @@
-import React from 'react'
-import ReactDOM from 'react-dom'
-import './styles/index.css'
-import Container from './Container'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { StarknetProvider } from "./Provider";
+import App from "./App";
 
-
-ReactDOM.render(
-  <React.StrictMode>
-    <Container />
-  </React.StrictMode>,
-  document.getElementById('root')
+ReactDOM.createRoot(
+  document.getElementById("root")
+).render(
+  <StarknetProvider>
+    <App />
+  </StarknetProvider>
 )
