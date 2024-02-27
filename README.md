@@ -1,2 +1,2 @@
 # Lila Stark Frontend
-Run `yarn install` hen `yarn run dev`
+Run `yarn install` then `yarn run dev`
