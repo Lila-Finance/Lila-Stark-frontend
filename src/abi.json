@@ -1,0 +1,253 @@
+{
+    "abi": [
+        {
+          "name": "LilaImpl",
+          "type": "impl",
+          "interface_name": "lila_on_starknet::ILila"
+        },
+        {
+          "name": "core::integer::u256",
+          "type": "struct",
+          "members": [
+            {
+              "name": "low",
+              "type": "core::integer::u128"
+            },
+            {
+              "name": "high",
+              "type": "core::integer::u128"
+            }
+          ]
+        },
+        {
+          "name": "core::bool",
+          "type": "enum",
+          "variants": [
+            {
+              "name": "False",
+              "type": "()"
+            },
+            {
+              "name": "True",
+              "type": "()"
+            }
+          ]
+        },
+        {
+          "name": "lila_on_starknet::OrderParams",
+          "type": "struct",
+          "members": [
+            {
+              "name": "filled",
+              "type": "core::bool"
+            },
+            {
+              "name": "strategy",
+              "type": "core::felt252"
+            },
+            {
+              "name": "amount",
+              "type": "core::felt252"
+            },
+            {
+              "name": "interest",
+              "type": "core::integer::u256"
+            },
+            {
+              "name": "term_time",
+              "type": "core::integer::u64"
+            },
+            {
+              "name": "filled_time",
+              "type": "core::integer::u64"
+            },
+            {
+              "name": "user",
+              "type": "core::starknet::contract_address::ContractAddress"
+            },
+            {
+              "name": "maker",
+              "type": "core::starknet::contract_address::ContractAddress"
+            }
+          ]
+        },
+        {
+          "name": "lila_on_starknet::StrategyInfo",
+          "type": "struct",
+          "members": [
+            {
+              "name": "token",
+              "type": "core::starknet::contract_address::ContractAddress"
+            },
+            {
+              "name": "protocol",
+              "type": "core::starknet::contract_address::ContractAddress"
+            }
+          ]
+        },
+        {
+          "name": "lila_on_starknet::ILila",
+          "type": "interface",
+          "items": [
+            {
+              "name": "create_order",
+              "type": "function",
+              "inputs": [
+                {
+                  "name": "amount",
+                  "type": "core::felt252"
+                },
+                {
+                  "name": "interest",
+                  "type": "core::integer::u256"
+                },
+                {
+                  "name": "term_time",
+                  "type": "core::integer::u64"
+                },
+                {
+                  "name": "strategy",
+                  "type": "core::felt252"
+                }
+              ],
+              "outputs": [],
+              "state_mutability": "external"
+            },
+            {
+              "name": "fulfill_order",
+              "type": "function",
+              "inputs": [
+                {
+                  "name": "id",
+                  "type": "core::felt252"
+                }
+              ],
+              "outputs": [],
+              "state_mutability": "external"
+            },
+            {
+              "name": "withdraw",
+              "type": "function",
+              "inputs": [
+                {
+                  "name": "id",
+                  "type": "core::felt252"
+                }
+              ],
+              "outputs": [],
+              "state_mutability": "external"
+            },
+            {
+              "name": "get_nonce",
+              "type": "function",
+              "inputs": [
+                {
+                  "name": "user",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "core::integer::u64"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "name": "get_order",
+              "type": "function",
+              "inputs": [
+                {
+                  "name": "id",
+                  "type": "core::felt252"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "lila_on_starknet::OrderParams"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "name": "get_order_id",
+              "type": "function",
+              "inputs": [
+                {
+                  "name": "user",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "nonce",
+                  "type": "core::integer::u64"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "core::felt252"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "name": "get_order_user",
+              "type": "function",
+              "inputs": [
+                {
+                  "name": "user",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "nonce",
+                  "type": "core::integer::u64"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "lila_on_starknet::OrderParams"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "name": "get_strategy",
+              "type": "function",
+              "inputs": [
+                {
+                  "name": "id",
+                  "type": "core::felt252"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "lila_on_starknet::StrategyInfo"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "name": "set_strategy",
+              "type": "function",
+              "inputs": [
+                {
+                  "name": "token",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "protocol",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                }
+              ],
+              "outputs": [],
+              "state_mutability": "external"
+            }
+          ]
+        },
+        {
+          "kind": "enum",
+          "name": "lila_on_starknet::Lila::Event",
+          "type": "event",
+          "variants": []
+        }
+      ]
+}

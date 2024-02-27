@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { ethers } from "ethers";
+import { ethers, Wallet } from "ethers";
 import { stark, uint256, AccountInterface, constants,CallData } from "starknet"
 import './styles/App.css';
 import ethLogo from './assets/ethlogo.png';
 import twitterLogo from './assets/twitter-logo.svg';
-import { useConnect, useDisconnect, useAccount, useNetwork, useWaitForTransaction } from '@starknet-react/core';
+import { useConnect, useDisconnect, useAccount, useNetwork, useWaitForTransaction, useContractRead } from '@starknet-react/core';
+import {abi} from "./abi.json"
+import { useContract } from "@starknet-react/core";
 
 const TWITTER_HANDLE = 'WTFAcademy_';
 const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
@@ -17,23 +19,11 @@ chainLogo = ethLogo;
 //     nodeUrl: `https://${chain.network}.example.org`
 //   }
 // }
-const LIFI_CONTRACT = '0x06fba4abcca41b2ae445f6c97d1da9e71567a560be908bc2df7606635c9057f8';
+const LIFI_CONTRACT = '0x013a4a29217bf4144895181f0d31dc0b0c0c6214111eb717e7d949e72638ef65';
 const USDC_ADDRESS = "0x005a643907b9a4bc6a55e9069c4fd5fd1f5c79a22470690f75556c4736e34426"
 
-const getUserOrder = async () => {
-  // get the user nonce (call )
-  // call the 
-  const createOrderCalldata = ["10000", "3", "0", "1", "0" ]
-  const callTx = await account.execute(
-    {
-        contractAddress: LIFI_CONTRACT,
-        entrypoint: "create_order",
-        calldata: createOrderCalldata
-      }
-  );
-  const status = await account.waitForTransaction(callTx.transaction_hash);
-}
 const App = () => {
+  
   const [value, setValue] = useState();
   const [minted, setMinted] = useState(false)
   const [orders, setOrders] = useState([]);
@@ -43,20 +33,44 @@ const App = () => {
   const { account, address, status } = useAccount()
   const { chain } = useNetwork()
   const [hash, setHash] = useState(undefined)
-  const { data, isLoading, error } = useWaitForTransaction({ hash, watch: true })
+  const { contract } = useContract({ abi: abi, address: LIFI_CONTRACT, provider: account});
+  
 
   const [isFormVisible, setFormVisible] = useState(false);
+  const [isCreateFormVisible, setCreateFormVisible] = useState(false);
+  const [isPickupFormVisible, setPickupFormVisible] = useState(false);
+  const [isWithdrawFormVisible, setWithdrawFormVisible] = useState(false);
+  
   const [formInput, setFormInput] = useState({
     amount: '',
     interest: '',
     term: '',
     strategy: ''
   });
+
+  const user_order = async () => {
+    let nonce = await contract.get_nonce(address);
+    let newOrders = []
+    for(let i=0; i<nonce; i++){
+      let order = await contract.get_order_user(address, i);
+      let id = await contract.get_order_id(address, i);
+      const newOrder = { id: id.toString(), amount: order.amount.toString(), status: "Unfilled", interest: order.interest.toString() }; 
+      if ( order.filled == true ){
+        newOrder.status = "Filled"
+      }
+      newOrders.push(newOrder)
+      console.log("ORDERs:", orders, newOrder)
+    }
+    setOrders(newOrders);
+  }
+
+  useEffect(()=>{
+    console.log({status})
+    if (status == 'connected'){
+    user_order()
+    }
+  }, [status]);
   
-
-  useEffect(() => {
-  }, [minted])
-
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -66,11 +80,26 @@ const App = () => {
     }));
   };
 
-  const handleFormSubmit = (e) => {
+  const handleCreateFormSubmit = (e) => {
     e.preventDefault();
     
     createOrder(formInput)
     // Close the form popup after submission
+    setCreateFormVisible(false);
+    setFormVisible(false);
+  };
+  const handlePickupFormSubmit = (e) => {
+    e.preventDefault();
+    pickOrder(formInput.id)
+    // Close the form popup after submission
+    setPickupFormVisible(false);
+    setFormVisible(false);
+  };
+  const handleWithdrawFormSubmit = (e) => {
+    e.preventDefault();
+    withdraw(formInput.id)
+    // Close the form popup after submission
+    setWithdrawFormVisible(false);
     setFormVisible(false);
   };
 
@@ -91,6 +120,7 @@ const App = () => {
 
 	// Form to enter domain name and data
 	const renderInputForm = () => {
+    
     console.log("here : ", chain)
 		if (chain.network !== "goerli") {
       console.log('chain:', chain)
@@ -107,55 +137,57 @@ const App = () => {
 
         
         <div className="form-container">
-        <div class="grid grid-cols-3 grid-flow-col gap-4">
+          <div class="grid grid-cols-3 grid-flow-col gap-4 mb-28">
 
-        <button className='cta-button mint-button' onClick={() => setFormVisible(true)}>
-            Pick Orders
-          </button>
-          
-          <button className='cta-button mint-button' onClick={() => setFormVisible(true)}>
-            Create Order
-          </button>
+            <button className='cta-button mint-button' onClick={() => {setFormVisible(!isFormVisible);setPickupFormVisible(!isPickupFormVisible)}}>
+              Pick Orders
+            </button>
+            
+            <button className='cta-button mint-button' onClick={() => {setFormVisible(!isFormVisible);setCreateFormVisible(!isCreateFormVisible)}}>
+              Create Order
+            </button>
 
-          <button className='cta-button mint-button' onClick={withdraw}>
-            Withdraw
-          </button>
+            <button className='cta-button mint-button' onClick={() => {setFormVisible(!isFormVisible);setWithdrawFormVisible(!isWithdrawFormVisible)}}>
+              Withdraw
+            </button>
           </div>
 
-          <div className="overflow-x-auto">
-          <h2 class="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white">Your orders</h2>
-          <table className="w-full table-fixed border-collapse border border-red-800">
-            <thead>
-              <tr className="bg-red-200">
-                <th className="border border-red-150 px-4 py-2 w-1/3">Order ID</th>
-                <th className="border border-red-150 px-4 py-2 w-1/3">Order Type</th>
-                <th className="border border-red-150 px-4 py-2 w-1/3">Order Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map(order => (
-                <tr key={order.id} className="bg-white">
-                  <td className="border border-red-150 px-4 py-2">{order.id}</td>
-                  <td className="border border-red-150 px-4 py-2">{order.type}</td>
-                  <td className="border border-red-150 px-4 py-2">{order.status}</td>
+         {orders.length!=0 && <div className="overflow-x-auto">
+            <h2 class="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white">Your orders</h2>
+            <table className="w-full border-collapse border border-red-800">
+              {<thead>
+                <tr className="bg-red-200">
+                  <th className="border border-red-150 px-4 py-2 w-1/3">Order ID</th>
+                  <th className="border border-red-150 px-4 py-2 w-1/3">Order Amount</th>
+                  <th className="border border-red-150 px-4 py-2 w-1/3">Order Interest</th>
+                  <th className="border border-red-150 px-4 py-2 w-1/3">Order Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>}
+              <tbody>
+                {orders.map(order => (
+                  <tr key={order.id} className="bg-white">
+                    <td className="border border-red-150 px-4 py-2">{order.id}</td>
+                    <td className="border border-red-150 px-4 py-2">{order.amount}</td>
+                    <td className="border border-red-150 px-4 py-2">{order.interest}%</td>
+                    <td className="border border-red-150 px-4 py-2">{order.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>}
         </div>
         </div>
 
-          {isFormVisible && (
-          <div className="popup-form">
-            <div className="popup-form bg-white p-5 rounded-lg shadow-lg">
-            <form onSubmit={handleFormSubmit} className="flex flex-col gap-4">
+          {isCreateFormVisible && (
+          <div className="pjustify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none">
+            <div className="relative w-auto my-6 mx-auto max-w-3xl bg-white p-5 rounded-lg shadow-lg">
+            <form onSubmit={handleCreateFormSubmit} className="flex flex-col gap-4">
               <label className="flex flex-col">
                 Amount:
                 <input
                   type="text"
                   name="amount"
-                  className="mt-1 p-2 border border-gray-300 rounded"
+                  className="inputBorder mt-1 p-2 border-2 border-gray-300 rounded bg-white text-blue-300"
                   value={formInput.amount}
                   onChange={handleInputChange}
                 />
@@ -165,7 +197,7 @@ const App = () => {
                 <input
                   type="text"
                   name="interest"
-                  className="bg-red-150 mt-1 p-2 border border-gray-300 rounded"
+                  className="inputBorder mt-1 p-2 border-2 border-gray-300 rounded bg-white text-blue-300"
                   value={formInput.interest}
                   onChange={handleInputChange}
                 />
@@ -175,7 +207,7 @@ const App = () => {
                 <input
                   type="text"
                   name="term"
-                  className="mt-1 p-2 border border-gray-300 rounded"
+                  className="inputBorder mt-1 p-2 rounded bg-white text-blue-300"
                   value={formInput.term}
                   onChange={handleInputChange}
                 />
@@ -185,7 +217,7 @@ const App = () => {
                 <input
                   type="text"
                   name="strategy"
-                  className="mt-1 p-2 border border-gray-300 rounded"
+                  className="inputBorder mt-1 p-2 border-2 border-gray-300 rounded bg-white text-blue-300"
                   value={formInput.strategy}
                   onChange={handleInputChange}
                 />
@@ -199,6 +231,52 @@ const App = () => {
           </div>
         )}
 
+        {isPickupFormVisible && (
+          <div class="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none">
+            <div className="relative w-auto my-6 mx-auto max-w-3xl bg-white p-5 rounded-lg shadow-lg">
+            <form onSubmit={handlePickupFormSubmit} className="flex flex-col gap-4">
+              <label className="flex flex-col">
+                Id
+                <input
+                  type="text"
+                  name="id"
+                  className="inputBorder mt-1 p-2 border-2 border-gray-300 rounded bg-white text-blue-300"
+                  value={formInput.id}
+                  onChange={handleInputChange}
+                />
+              </label>
+             
+              <button type="submit" className="bg-red-500 text-white p-2 rounded mt-4 hover:bg-blue-700">
+                  Submit
+                </button>
+            </form>
+            </div>
+          </div>
+        )}
+
+        {isWithdrawFormVisible && (
+            <div class="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none">
+              <div className="relative w-auto my-6 mx-auto max-w-3xl bg-white p-5 rounded-lg shadow-lg">
+              <form onSubmit={handleWithdrawFormSubmit} className="flex flex-col gap-4">
+                <label className="flex flex-col">
+                  id:
+                  <input
+                    type="text"
+                    name="id"
+                    className="inputBorder mt-1 p-2 border-2 border-gray-300 rounded bg-white text-blue-300"
+                    value={formInput.id}
+                    onChange={handleInputChange}
+                  />
+                </label>
+              
+                <button type="submit" className="bg-red-500 text-white p-2 rounded mt-4 hover:bg-blue-700">
+                    Submit
+                  </button>
+              </form>
+              </div>
+            </div>
+          )}
+
         </div>
 		);
 	}
@@ -209,35 +287,26 @@ const App = () => {
     )
   }
 
-  const withdraw = async () => {
-    const withdrawData = [ LIFI_CONTRACT ] 
-    const callTx = await account.execute(
-      {
-          contractAddress: "0x03ca3c1b060088408797accebe72938ef8a5ac672c68bd3a92a5c193ad30ba3b",
-          entrypoint: "wuthdraw",
-          calldata: withdrawData
-        }
-    );
-    const status = await account.waitForTransaction(callTx.transaction_hash);
-    console.log("Withdaw worked yay : ",status)
+  const withdraw = async (id) => {
+    await contract.withdraw(id)
   }
 
   const createOrder = async (formData) => {
     // console.log(chain)
     console.log(account)
     try {
-      // const createOrderCalldata_ = [ LIFI_CONTRACT, formData.amount, "0" ]
+      const createOrderCalldata_ = [ LIFI_CONTRACT, formData.amount, "0" ]
       
-      // const ercTx = await account.execute(
-      //   {
-      //       contractAddress: USDC_ADDRESS,
-      //       entrypoint: "approve",
-      //       calldata: createOrderCalldata_
-      //     },
-      // )
+      const ercTx = await account.execute(
+        {
+            contractAddress: USDC_ADDRESS,
+            entrypoint: "approve",
+            calldata: createOrderCalldata_
+          },
+      )
 
-      // const status_ = await account.waitForTransaction(ercTx.transaction_hash);
-      // console.log("erc status : ", status_)
+      const status_ = await account.waitForTransaction(ercTx.transaction_hash);
+      console.log("erc status : ", status_)
       const createOrderCalldata = [formData.amount, formData.interest, "0", formData.term, "0" ]
       const callTx = await account.execute(
         {
@@ -252,36 +321,54 @@ const App = () => {
         setMinted(() => {return true});
       }
       else {}
+      await user_order();
 
-
-      const newOrder = { id: orders.length + 1, type: '...', status: '...' }; 
-      setOrders([...orders, newOrder]);
     }
     catch (error) {
       console.log(error);
     }
   }
+
+  const pickOrder = async (id) => {
     
+    let order = await contract.get_order(id);
+    let interestAmount = order.amount * order.interest / 100n;
+    console.log(order, interestAmount)
+    const createOrderCalldata_ = [ LIFI_CONTRACT, Number(interestAmount), "0"]
+      
+    const ercTx = await account.execute(
+      {
+          contractAddress: USDC_ADDRESS,
+          entrypoint: "approve",
+          calldata: createOrderCalldata_
+        },
+    )
+
+    const status_ = await account.waitForTransaction(ercTx.transaction_hash);
+    console.log("erc status : ", status_)
+
+    await contract.fulfill_order(id);
+  }
+  
+  
 	return (
-		<div className="App">
-			<div className="container mx-auto center ">
+		// <div className="App"> 
+      <div className="App bg-[url('../public/images/bg.svg')"> 
+			{/* <div className="container mx-auto center bg-custom-name h-64 w-full bg-cover"> */}
+      <div className="ccontainer">
 
-      <div className="w-full 2xl:max-w-7xl 3xl:max-w-[1400px] mx-auto pt-5 md:pt-9 pb-14 px-6 md:px-8 xl:px-12">
         {/* Wrapper start */}
-        <div className="w-full flex items-center justify-between gap-10">
+        <div className="customHeader w-full flex items-center">
           {/* left side */}
-          <div className="w-screen grid grid-cols-2">
-          <div>
-          <img src="./images/logo.svg" alt="site_logo" />
-          </div>
+          <div className="w-full grid grid-cols-2">
+            <div>
+            <img src="./images/logo.svg" alt="site_logo" />
+            </div>
 
-          <div className='items-right'>
-          <img alt="Network logo" className="logo" src={chainLogo} />
-                { status == 'connected' ? <button onClick = {disconnect} className = 'ru-button'> Wallet: {address.slice(0, 6)}...{address.slice(-4)}</button> : <p> Not Connected </p> }
+            <div className='items-right'>
+                  { status == 'connected' ? <button onClick = {disconnect} className = 'py-2.5 px-5 me-2 mb-2 text-sm font-medium text-gray-900 focus:outline-none bg-blue-300 rounded-full border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700'> {address.slice(0, 10)}...{address.slice(-4)}</button> : <button className='py-2.5 px-5 me-2 mb-2 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-full border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700'> Not Connected </button> }
+            </div>
           </div>
-          
-        </div>
-        </div>
         </div>
         
         {(status == 'connected') && renderInputForm()}
@@ -292,7 +379,6 @@ const App = () => {
 
         {!(status == 'connected') && renderNotConnectedContainer()}
         <div></div>
-
 
         {!(status == 'connected') && 
         (<div class="p-6">
@@ -329,8 +415,6 @@ const App = () => {
 
         
       </div>
-        {minted && mintedTip()}
-
 
       
         {/*<img className="connect-wallet-container" src="./src/WTF.png" alt="WTF png" /><br></br>*/}

@@ -3,18 +3,52 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+
+*{
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
 .App {
   height: 100vh;
   width: 100vw;
   background-color: #ffffff;
   text-align: center;
   color: rgb(22, 19, 19);
+  margin: none;
+  background-color: ;
 }
 
 p {
   margin:0;
 }
 
+.inputBorder{
+  border: 1px solid gray;
+}
+.ccontainer {
+  width: 100 vw;
+  display: flex;
+  flex-direction: column;
+
+}
+
+.imgHeader{
+  grid-gap: 10;
+  width: 100vw;
+}
+
+.customHeader {
+  background-color: transparent;
+  justify-items: space-between;
+  width: 100 vw;
+  margin-bottom: 50px;
+  padding-top: 10px;
+  padding-left: 10px;
+
+}
 .blur-effect {
   filter: blur(5px);
 }
